@@ -6,35 +6,39 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 app.use(express.json());
 
+const PROJECT_ID = 'af5317f1-13f1-48af-b859-682ec2830ddb';
+const ENVIRONMENT_NAME = 'production';
+
+const UNITY_API_URL = `https://collect.analytics.unity3d.com/api/analytics/collect/v1/projects/${PROJECT_ID}/environments/${ENVIRONMENT_NAME}`;
+const RANDOM_USER_ID = 'https://collect.analytics.unity3d.com/api/analytics/collect/v1/uuid';
+
 app.post('/webhook', async (req, res) => {
     console.log("🔹 Received request from Segment:", JSON.stringify(req.body, null, 2)); // Log the request
 
     try {
         const eventData = req.body;
 
-        const projectId = 'af5317f1-13f1-48af-b859-682ec2830ddb';
-        const environmentName = 'production';
-        const unityUrl = `https://collect.analytics.unity3d.com/api/analytics/collect/v1/projects/${projectId}/environments/${environmentName}`;
-
-        const eventName = 'EventTest';//eventData.event || "unknown_event";
-        const userID = eventData.userId || "unknown_user";
-        const timestamp = eventData.timestamp || new Date().toISOString();
-
-        const unityPayload = {
+        const eventPayload = {
             "eventList": [
                 {
-                    "eventName": eventName,
-                    "userID": userID,
-                    "eventUUID": uuidv4(), // Generate unique event ID to prevent duplicates
-                    "eventTimestamp": timestamp,
-                    "eventVersion": 1
+                    "eventName": "EventTest",  // Must match the event name in Unity Dashboard
+                    "eventTimestamp": new Date().toISOString(),
+                    "eventUUID": uuidv4(),  // Unique ID to prevent duplicate events
+                    "userID": "test-user-123",
+                    "sessionID": uuidv4(),  // Generate a session ID
+                    "eventParams": {
+                        "clientVersion": "1.0.0",
+                        "platform": "PC",
+                        "sdkMethod": "CustomScript",
+                        "userCountry": "US"
+                    }
                 }
             ]
         };
 
-        const response = await axios.post(unityUrl, eventData, {
+        const response = await axios.post(UNITY_API_URL, eventPayload, {
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
             }
         });
         console.log("✅ Event successfully sent to Unity Analytics:", response.status);

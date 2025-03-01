@@ -5,6 +5,8 @@ const app = express();
 app.use(express.json());
 
 app.post('/webhook', async (req, res) => {
+    console.log("🔹 Received request from Segment:", JSON.stringify(req.body, null, 2)); // Log the request
+
     try {
         const eventData = req.body;
 
@@ -17,15 +19,17 @@ app.post('/webhook', async (req, res) => {
                 'Content-Type': 'application/json'
             }
         });
+        console.log("✅ Event successfully sent to Unity Analytics:", response.data);
 
-        res.status(200).send('Evento enviado a Unity Analytics');
+        res.status(200).send('Event sent to Unity Analytics');
+
     } catch (error) {
-        console.error('Error:', error.response ? error.response.data : error.message);
-        res.status(500).send('Error al enviar evento');
+        console.error("❌ Error sending event to Unity:", error.response?.data || error.message);
+        res.status(500).send('Error sending event');
     }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor escuchando en puerto ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
 });

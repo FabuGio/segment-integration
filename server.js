@@ -13,7 +13,7 @@ const UNITY_API_URL = `https://collect.analytics.unity3d.com/api/analytics/colle
 const RANDOM_USER_ID = 'https://collect.analytics.unity3d.com/api/analytics/collect/v1/uuid';
 
 app.post('/webhook', async (req, res) => {
-    console.log("🔹 Received request from Segment:", JSON.stringify(req.body, null, 2)); // Log the request
+    console.log("🔹 Received request from Segment:", JSON.stringify(req.body, null, 2));
 
     try {
         const eventData = req.body;
@@ -21,14 +21,14 @@ app.post('/webhook', async (req, res) => {
         const eventPayload = {
             "eventList": [
                 {
-                    "eventName": "EventTest",  // Must match the event name in Unity Dashboard
+                    "eventName": "EventTest", 
                     "eventTimestamp": new Date().toISOString(),
-                    "eventUUID": uuidv4(),  // Unique ID to prevent duplicate events
+                    "eventUUID": uuidv4(),  
                     "userID": "test-user-123",
-                    "sessionID": uuidv4(),  // Generate a session ID
+                    "sessionID": uuidv4(),  
                     "eventParams": {
                         "clientVersion": "1.0.0",
-                        "platform": "PC",
+                        "platform": "PC_CLIENT",
                         "sdkMethod": "CustomScript",
                         "userCountry": "US"
                     }

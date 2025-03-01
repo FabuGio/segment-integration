@@ -1,7 +1,9 @@
-﻿const express = require('express');
+﻿require('dotenv').config();
+const express = require('express');
 const axios = require('axios');
-const app = express();
+const { v4: uuidv4 } = require('uuid');
 
+const app = express();
 app.use(express.json());
 
 app.post('/webhook', async (req, res) => {
@@ -14,14 +16,30 @@ app.post('/webhook', async (req, res) => {
         const environmentName = 'production';
         const unityUrl = `https://collect.analytics.unity3d.com/api/analytics/collect/v1/projects/${projectId}/environments/${environmentName}`;
 
+        const eventName = 'EventTest';//eventData.event || "unknown_event";
+        const userID = eventData.userId || "unknown_user";
+        const timestamp = eventData.timestamp || new Date().toISOString();
+
+        const unityPayload = {
+            "eventList": [
+                {
+                    "eventName": eventName,
+                    "userID": userID,
+                    "eventUUID": uuidv4(), // Generate unique event ID to prevent duplicates
+                    "eventTimestamp": timestamp,
+                    "eventVersion": 1
+                }
+            ]
+        };
+
         const response = await axios.post(unityUrl, eventData, {
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-        console.log("✅ Event successfully sent to Unity Analytics:", response.data);
+        console.log("✅ Event successfully sent to Unity Analytics:", response.status);
 
-        res.status(200).send('Event sent to Unity Analytics');
+        res.status(204).send(); // 204 means success with no content
 
     } catch (error) {
         console.error("❌ Error sending event to Unity:", error.response?.data || error.message);

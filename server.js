@@ -1,57 +1,51 @@
-﻿require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
+const config = require('./config');
 
 const app = express();
 app.use(express.json());
 
-const PROJECT_ID = 'af5317f1-13f1-48af-b859-682ec2830ddb';
-const ENVIRONMENT_NAME = 'production';
+const formatEventData = (rawData) => {
+    return {
+        eventName: rawData.eventName || 'unknown_event',
+        userId: rawData.userId || 'anonymous',
+        timestamp: rawData.timestamp || new Date().toISOString(),
+        sessionId: rawData.sessionId || null,
+        eventData: rawData.eventData || {}
+    };
+};
 
-const UNITY_API_URL = `https://collect.analytics.unity3d.com/api/analytics/collect/v1/projects/${PROJECT_ID}/environments/${ENVIRONMENT_NAME}`;
-const RANDOM_USER_ID = 'https://collect.analytics.unity3d.com/api/analytics/collect/v1/uuid';
+const sendToUnityAnalytics = async (eventData) => {
+    try {
+        const response = await axios.post(config.UNITY_ANALYTICS_URL(), eventData, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        console.log(`[SUCCESS] Event sent to Unity Analytics:`, response.data);
+    } catch (error) {
+        console.error(`[ERROR] Failed to send event to Unity:`, error.response?.data || error.message);
+        throw new Error('Failed to send event to Unity Analytics');
+    }
+};
 
 app.post('/webhook', async (req, res) => {
-    console.log("🔹 Received request from Segment:", JSON.stringify(req.body, null, 2));
-
     try {
+        
         const eventData = req.body;
+        console.log('[INFO] Received event:', eventData);
 
-        const eventPayload = {
-            "eventList": [
-                {
-                    "eventName": "EventTest", 
-                    "eventTimestamp": new Date().toISOString(),
-                    "eventUUID": uuidv4(),  
-                    "userID": "test-user-123",
-                    "sessionID": uuidv4(),  
-                    "eventParams": {
-                        "clientVersion": "1.0.0",
-                        "platform": "PC_CLIENT",
-                        "sdkMethod": "CustomScript",
-                        "userCountry": "US"
-                    }
-                }
-            ]
-        };
-
-        const response = await axios.post(UNITY_API_URL, eventPayload, {
-            headers: {
-                "Content-Type": "application/json",
-            }
-        });
-        console.log("✅ Event successfully sent to Unity Analytics:", response.status);
-
-        res.status(204).send(); // 204 means success with no content
-
+        const formattedEvent = formatEventData(req.body);
+        await sendToUnityAnalytics(formattedEvent);
+        
+        
+        res.status(200).send({ message: 'Event successfully sent to Unity Analytics' });
     } catch (error) {
-        console.error("❌ Error sending event to Unity:", error.response?.data || error.message);
-        res.status(500).send('Error sending event');
+        console.error('Error enviando evento a Unity:', error.response?.data || error.message);
+        res.status(500).send({ error: error.message });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
+// Start server
+app.listen(config.PORT, () => {
+    console.log(`[SERVER] Listening on port ${config.PORT}`);
 });
